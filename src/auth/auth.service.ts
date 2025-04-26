@@ -1,24 +1,43 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { UsersService } from 'src/users/users.service';
-import * as bcrypt from 'bcrypt';
+import { PrismaService } from './../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Request } from 'express';
+import { JwtPayload } from './models/jwt-payload.model';
 
 @Injectable()
 export class AuthService {
-    constructor(private readonly usersService: UsersService, private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly prismaService: PrismaService,
+  ) {}
 
-    async validateUser(email: string, password: string){
-        const user = await this.usersService.findUserByEmail(email);
-        if (user && (await bcrypt.compare(password,user.password))){
-            return user;
-        }
-        throw new UnauthorizedException('Invalid credentials');
-    }
+  public async createAccessToken(jwtPayload: JwtPayload): Promise<string> {
+    return this.jwtService.sign(jwtPayload);
+  }
 
-    async login(user:any){
-        const payload = { email: user.email, role: user.role, sub: user.id };
-        return {
-            access_token: this.jwtService.sign(payload),
-        };
+  public async validateUser(jwtPayload: JwtPayload) {
+    const user = await this.prismaService[
+      jwtPayload.role.toLowerCase()
+    ].findUnique({
+      where: { id: jwtPayload.id },
+    });
+    if (!user) throw new BadRequestException('Token owner invalid.');
+    return user;
+  }
+
+  public returnJwtExtractor(): (request: Request) => string {
+    return AuthService.jwtExtractor;
+  }
+
+  private static jwtExtractor(request: Request): string {
+    const { authorization: token } = request.headers;
+    if (!token) {
+      throw new NotFoundException('Token not found.');
     }
+    return token.split(' ')[1];
+  }
 }

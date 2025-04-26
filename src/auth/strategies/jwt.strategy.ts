@@ -1,41 +1,22 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { PassportStrategy } from "@nestjs/passport";
-import { ExtractJwt, Strategy } from "passport-jwt";
-import { ConfigService } from "@nestjs/config";
-
+import 'dotenv/config';
+import { JwtPayload } from './../models/jwt-payload.model';
+import { AuthService } from './../auth.service';
+import { Injectable } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { Strategy } from 'passport-jwt';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
-    constructor(private configService: ConfigService) {
-        const jwtSecret = configService.get<string>('JWT_SECRET');
+export class JwtStrategy extends PassportStrategy(Strategy) {
+  constructor(private readonly authService: AuthService) {
+    super({
+      jwtFromRequest: authService.returnJwtExtractor(),
+      ignoreExpiration: false,
+      secretOrKey: '9byn0r12b691726b35912b634',
+    });
+  }
 
-        if (!jwtSecret) {
-            throw new UnauthorizedException('JWT_SECRET is not defined in environment variables');
-        }
-
-        super({
-            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-            ignoreExpiration: false,
-            secretOrKey: jwtSecret,
-        });
-    }
-
-    async validate(payload: { sub: number; email: string; role: string }) {
-        return { userId: payload.sub, email: payload.email, role: payload.role };
-    }
+  async validate(jwtPayload: JwtPayload) {
+    const user = await this.authService.validateUser(jwtPayload);
+    return user;
+  }
 }
-
-// @Injectable()
-// export class JwtStrategy extends PassportStrategy(Strategy, 'jwt'){
-//     constructor(private configService: ConfigService) {
-//         super({
-//             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-//             ignoreExpiration: false,
-//             secretOrKey: configService.get<string>('JWT_SECRET'),
-//           });
-//     }
-
-//     async validate(payload: any) {
-//         return { userId: payload.sub, email: payload.email, role: payload.role };
-//     }
-// }

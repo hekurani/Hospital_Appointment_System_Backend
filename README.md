@@ -4,9 +4,8 @@ This project is a REST API created to manage a hospital's platform, managing doc
 ### How to run:
 - Clone the repository.
 - Run the following commands:
-```
-docker-compose up -d
-```
+- npm install
+- npm run start:dev
 ### Built with:
 - [Docker](https://www.docker.com/)
 - [Node.js](https://nodejs.org/en/)
@@ -17,4 +16,8 @@ docker-compose up -d
 - [Swagger](https://swagger.io/)
 - [Prisma](https://www.prisma.io/)
 ### Developed by:
-- [Pedro Reis](https://www.linkedin.com/in/pedroreisalves/)
+ Alisa Shala,
+ Blerta Lutolli,
+ Rita Ademi,
+ Dion Gashi,
+ Hekuran Kokolli
